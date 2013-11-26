@@ -1,0 +1,37 @@
+Metadata-Version: 1.0
+Name: apachelog
+Version: 1.1
+Summary: Access log parser in python, ported from Peter Hickman's Apache::LogRegex Perl moduleUniversal.
+Home-page: http://code.google.com/p/apachelog
+Author: Harry Fuecks
+Author-email: hfuecks@gmail.com
+License: Artistic License / GPLv2
+Description: Apache Log Parser
+        -----------------
+        
+        Parser for extracting fields from a single line of an Apache
+        access.log (should work for other servers conforming to the
+        Common Log Format).
+        
+        Create the parser with the log format from your server .conf
+        file, parse lines to get dict corresponding to fields defined
+        in the log format.
+        
+        
+        
+Keywords: apache,log,parser
+Platform: POSIX
+Platform: Windows
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Console
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: Artistic License
+Classifier: License :: OSI Approved :: GNU General Public License (GPL)
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Topic :: Internet :: Log Analysis
+Classifier: Topic :: System :: Logging
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Text Processing
