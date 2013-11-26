@@ -44,29 +44,8 @@ __updated__ = '2013-11-24'
 DEBUG = 1
 TESTRUN = 0
 PROFILE = 0
-
-REFRESH_FILE = 23*60*60
-SFS_LOG_URL = "http://www.stopforumspam.com/downloads/listed_ip_90.zip"
-SFS_FILE = "listed_ip_90"
-
-'''
-
-Pop these into the local_settings.py file, better security and easier for
-testing.
-
-HIT_THRESHOLD = 25
-LOGFILE = '/path/to/apache/logfile.log'
-# IPs to ignore as they might have weird use cases e.g. Home IP, Office IP,
-# search engines that you'd want on the site (although these shouldn't appear
-# on the stopforumspam.com lists
-EXCLUDE_IPS = [
-               # Office IP
-               # Home IP
-               ]
-
-SFS_API_KEY = 'XXX' # Not required in this version
-
-'''
+HIT_THRESHOLD = 100 # How many hits before we check an IP?
+EXPIRE_AFTER = 90 # How many days before an IP is removed from list?
 
 # Pull in local configuration from local_settings.py
 try:

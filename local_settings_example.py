@@ -18,7 +18,7 @@ those with lots of images this may need to be higher. No harm done except it'll
 mean checking a lot of IP addresses.  
 '''
 
-HIT_THRESHOLD = 25
+HIT_THRESHOLD = 100
 
 '''
 LOGFILE is the path to the Apache log file. It needs to be unzipped to be

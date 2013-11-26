@@ -13,6 +13,32 @@ In effect it's a DDoS attack through comments. The aim of this script is to
 stop or at least limit the effects of this by blocking offending IPs at the
 firewall level.
 
+## Installation and use
+
+Requirements:
+
++ Python v2.6+
++ Python sqlite module (should be in Python by default)
++ ipset
++ Local access to apache log file
+
+It should be dead easy to use this script:
+
+<code>python ban-them.py --run</code>
+
+which will run the script on the local version of the apache log file. It'll
+process the file, pull out any IPs that meet HIT_THRESHOLD (default: 100) and
+any IPs that have left comments.
+
+These IPs are checked to see if they're on the list and timestamp updated. If
+they're not listed, they are tested against the StopForumSpam.com API to see if
+they're baddies. If so, they're added an ipset called <code>blacklist</code> 
+which is created if it doesn't exist.
+
+Finally, the DB is checked for any IPs that haven't spammed for EXPIRE_AFTER
+(default is 90) days. Hopefully ISPs are dropping baddies from their users and
+so we give a fair crack of the whip to new users of those IPs. 
+
 ## Methodology
 
 + Analyse the site's Apache log files (probably daily)
