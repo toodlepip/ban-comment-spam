@@ -47,7 +47,6 @@ N.B. Must be installed and run as root.
 + [Mass-blocking IP addresses with ipset](http://daemonkeeper.net/781/)
 + [ipset tibs & examples](http://ipset.netfilter.org/tips.html)
 + [Drop IP addresses using iptables](http://www.cyberciti.biz/faq/linux-iptables-drop/)
-
-
++ [Using iptables & ipset](http://raid6.com.au/~onlyjob/posts/iptables-ipset/)
 
  
