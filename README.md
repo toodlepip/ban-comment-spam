@@ -40,6 +40,14 @@ it's a bit more fiddly. Fortunately, there's some useful instructions to
 1. module-assistant auto-install xtables-addons-source
 1. depmod -a
 
-N.B. Must be installed and run as root. 
+N.B. Must be installed and run as root.
+
+## References
+
++ [Mass-blocking IP addresses with ipset](http://daemonkeeper.net/781/)
++ [ipset tibs & examples](http://ipset.netfilter.org/tips.html)
++ [Drop IP addresses using iptables](http://www.cyberciti.biz/faq/linux-iptables-drop/)
+
+
 
  
