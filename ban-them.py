@@ -184,7 +184,11 @@ def main(argv=None):
         #   server and add them to the ipset blacklist.
         #   TODO: Needs a check here if the list > 65536 IPs which is the
         #   limit for an iphash using ipset
-        
+        # If ipset doesn't exist, create it:
+        # sudo ipset --create blacklist iphash --hashsize 4096
+        # Add it to the top of the iptables ruleset
+        # sudo iptables -I INPUT 1 -m set --set nets2blk src -j DROP
+    
         # Delete all entries from blacklist
         # ipset --flush blacklist
             #subprocess.check_call(["ipset", "--flush blacklist"])
