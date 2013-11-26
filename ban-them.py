@@ -9,6 +9,8 @@
  
  The aim is to block IPs that are sending commment spam at the server level so
  the minimum number of processing power is wasted in dealing with them.
+ 
+ More info on Github: https://github.com/toodlepip/ban-comment-spam
 
 @author:     Sam Michel
             
