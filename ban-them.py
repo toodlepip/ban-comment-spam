@@ -267,7 +267,7 @@ def main(argv=None):
                 subprocess.check_call(["iptables", "-I", "INPUT", "1", "-m", "set", "--set", "blacklist", "src", "-j", "DROP"])
             
             # Flush blacklist of existing values
-            subprocess.check_call(["ipset", "--flush"])
+            subprocess.check_call(["ipset", "--flush", "blackmail"])
             
             
             for ip in blacklist:
