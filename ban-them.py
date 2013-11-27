@@ -258,7 +258,7 @@ def main(argv=None):
             dprint("Updating ipset and iptables with %s new IPs\n", len(blacklist))
             
             # Create blacklist set, will fail gracefully if it exists already
-            subprocess.check_call(["ipset", "--create blacklist", "iphash", "--hashsize 4096"])
+            subprocess.check_call(["ipset", "--create", "blacklist", "iphash", "--hashsize", "4096"])
             
             p = subprocess.Popen(["iptables", "-L", "-n"], stdout=subprocess.PIPE).communicate()[0]
             print p
