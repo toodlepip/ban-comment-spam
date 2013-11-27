@@ -168,12 +168,14 @@ def check_local(ips):
 def update_local(ips):
     global con
     global cur
+    count = 0
     
     for ip in ips:
         cur.execute("REPLACE INTO blacklist (ip, timestamp) VALUES (?, ?)", \
             (ip, int(time.time())))
-    con.commit()
-    dprint("Updated %d rows in the local DB", cur.rowcount)
+        con.commit()
+        count += cur.rowcount
+    dprint("Updated %d rows in the local DB", count)
         
 def expire_local():
     global con
@@ -305,9 +307,10 @@ def main(argv=None):
       
         
     except Exception, e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
         indent = len(program_name) * " "
-        sys.stderr.write(program_name + ": " + repr(e) + "\n")
-        sys.stderr.write(indent + "  for help use --help")
+        sys.stderr.write(program_name + ": " + repr(e) + " line: " + exc_traceback.tb_lineno + "\n")
+        sys.stderr.write(indent + "  for help use --help\n")
         return 2
     
 def dprint(text="", data=[]):
