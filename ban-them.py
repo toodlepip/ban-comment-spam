@@ -138,9 +138,8 @@ def get_sqlite_cursor():
         dprint("Blacklist table not in local DB, need to create it\n")
         cur.execute("CREATE TABLE blacklist (ip TEXT PRIMARY KEY, timestamp INT)")
     else:
-        if not opts.stats:
-            cur.execute("SELECT COUNT(ip) FROM blacklist;")
-            dprint("%s blacklist IPs already in database\n", cur.fetchone())                       
+        cur.execute("SELECT COUNT(ip) FROM blacklist;")
+        dprint("%s blacklist IPs already in database\n", cur.fetchone())                       
 
 '''
 Check a list of IP addresses against the local database (it's quicker). If
