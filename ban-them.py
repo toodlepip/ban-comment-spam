@@ -258,18 +258,22 @@ def main(argv=None):
             dprint("Updating ipset and iptables with %s new IPs\n", len(blacklist))
             
             # Create blacklist set, will fail gracefully if it exists already
+            dprint("Create blacklist set\n")
             subprocess.check_call(["ipset", "--create", "blacklist", "iphash", "--hashsize", "4096"])
             
+            dprint("Check blacklist set is listed in iptables\n")
             p = subprocess.Popen(["iptables", "-L", "-n"], stdout=subprocess.PIPE).communicate()[0]
             print p
             match = re.search('match-set blacklist src', p)
             if not match:
+                dprint("Adding blacklist set to top of iptables\n")
                 subprocess.check_call(["iptables", "-I", "INPUT", "1", "-m", "set", "--set", "blacklist", "src", "-j", "DROP"])
             
             # Flush blacklist of existing values
-            subprocess.check_call(["ipset", "--flush", "blackmail"])
+            dprint("Flush blacklist set before re-filling with IPs\n")
+            subprocess.check_call(["ipset", "--flush", "blacklist"])
             
-            
+            dprint("Adding new IPs to blacklist set\n")
             for ip in blacklist:
                 subprocess.check_call(["ipset", "-add", "blacklist", "%s" % ip])
              
