@@ -211,6 +211,7 @@ def main(argv=None):
         parser.add_option("-o", "--out", dest="outfile", help="set output path [default: %default]", metavar="FILE")
         parser.add_option("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %default]")
         parser.add_option("-r", "--run", dest="run", action="store_true", help="process the apache log and ban spammers")
+        parser.add_option("-s", "--stats", dest="stats", action="store_true", help="show basic stats about IPs stored")
         
         # set defaults
         parser.set_defaults(outfile="./out.txt", infile="./in.txt")
@@ -248,13 +249,20 @@ def main(argv=None):
         #   once/day. More info: http://www.stopforumspam.com/usage
 
             ips_to_check = check_sfs(ips_to_check)
+            
+        #3. Update the baddie IPs into local DB, expire any that are out of
+        #   date and grab the final blacklist to be added to firewall    
+        
             update_local(ips_to_check)
             expire_local()
             blacklist = get_local_ips()
             if not blacklist:
                 dprint("No IPs to add to iptables, possibly something wrong\n")
                 sys.exit()
-                
+
+        #4. Time to update the firewall, setting the rules and ipset if they
+        #   don't exist already.
+
             dprint("Updating ipset and iptables with %s new IPs\n", len(blacklist))
             
             # Create blacklist set, will fail gracefully if it exists already
@@ -266,7 +274,6 @@ def main(argv=None):
             
             dprint("Check blacklist set is listed in iptables\n")
             p = subprocess.Popen(["iptables", "-L", "-n"], stdout=subprocess.PIPE).communicate()[0]
-            print p
             match = re.search('match-set blacklist src', p)
             if not match:
                 dprint("Adding blacklist set to top of iptables\n")
@@ -281,20 +288,12 @@ def main(argv=None):
                 subprocess.check_call(["ipset", "--add", "blacklist", "%s" % ip])
              
             sys.exit()
-        
-        #3. Generate a list of IP addresses that need to be blocked from the
-        #   server and add them to the ipset blacklist.
-        #   TODO: Needs a check here if the list > 65536 IPs which is the
-        #   limit for an iphash using ipset
-        # If ipset doesn't exist, create it:
-        # sudo ipset --create blacklist iphash --hashsize 4096
-        # Add it to the top of the iptables ruleset
-        # sudo iptables -I INPUT 1 -m set --set nets2blk src -j DROP
-    
-        # Delete all entries from blacklist
-        # ipset --flush blacklist
-            #subprocess.check_call(["ipset", "--flush blacklist"])
-        
+            
+        if opts.stats:
+            get_sqlite_cursor()
+            cur.execute("SELECT COUNT(*) FROM blacklist")
+            sys.stdout.write("%s IPs stored in DB\n" % cur.fetchone())
+      
         
     except Exception, e:
         indent = len(program_name) * " "
