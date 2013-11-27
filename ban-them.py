@@ -172,7 +172,8 @@ def update_local(ips):
     for ip in ips:
         cur.execute("REPLACE INTO blacklist (ip, timestamp) VALUES (?, ?)", \
             (ip, int(time.time())))
-        con.commit()
+    con.commit()
+    dprint("Updated %d rows in the local DB", cur.rowcount)
         
 def expire_local():
     global con
