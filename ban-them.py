@@ -253,20 +253,20 @@ def main(argv=None):
 #             blacklist = get_local_ips()
             
             # Create blacklist set, will fail gracefully if it exists already
-            subprocess.check_call(["echo", "ipset --create blacklist iphash --hashsize 4096"])
+            subprocess.check_call(["ipset", "--create blacklist iphash --hashsize 4096"])
             
             p = subprocess.Popen(["iptables", "-L", "-n"], stdout=subprocess.PIPE).communicate()[0]
             print p
             match = re.search('match-set blacklist src', p)
             if not match:
-                subprocess.check_call(["echo", "iptables -I INPUT 1 -m set --set blacklist src -j DROP"])
+                subprocess.check_call(["iptables", "-I INPUT 1 -m set --set blacklist src -j DROP"])
             
             # Flush blacklist of existing values
-            subprocess.check_call(["echo", "ipset --flush"])
+            subprocess.check_call(["ipset", "--flush"])
             
             
             for ip in blacklist:
-                subprocess.check_call(["echo", "ipset -add blacklist %s" % ip])
+                subprocess.check_call(["ipset", "-add blacklist %s" % ip])
              
             sys.exit()
         
