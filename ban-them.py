@@ -247,10 +247,15 @@ def main(argv=None):
         #   a cap on how many calls can be made. Suggest running this script
         #   once/day. More info: http://www.stopforumspam.com/usage
 
-#             ips_to_check = check_sfs(ips_to_check)
-#             update_local(ips_to_check)
-#             expire_local()
-#             blacklist = get_local_ips()
+            ips_to_check = check_sfs(ips_to_check)
+            update_local(ips_to_check)
+            expire_local()
+            blacklist = get_local_ips()
+            if not blacklist:
+                dprint("No IPs to add to iptables, possibly something wrong\n")
+                sys.exit()
+                
+            dprint("Updating ipset and iptables with %s new IPs\n", len(blacklist))
             
             # Create blacklist set, will fail gracefully if it exists already
             subprocess.check_call(["ipset", "--create blacklist iphash --hashsize 4096"])
