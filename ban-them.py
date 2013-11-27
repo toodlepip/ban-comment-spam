@@ -259,7 +259,10 @@ def main(argv=None):
             
             # Create blacklist set, will fail gracefully if it exists already
             dprint("Create blacklist set\n")
-            subprocess.check_call(["ipset", "--create", "blacklist", "iphash", "--hashsize", "4096"])
+            try:
+                subprocess.check_call(["ipset", "--create", "blacklist", "iphash", "--hashsize", "4096"])
+            except:
+                pass
             
             dprint("Check blacklist set is listed in iptables\n")
             p = subprocess.Popen(["iptables", "-L", "-n"], stdout=subprocess.PIPE).communicate()[0]
