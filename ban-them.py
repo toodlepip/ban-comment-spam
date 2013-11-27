@@ -48,6 +48,8 @@ HIT_THRESHOLD = 100 # How many hits before we check an IP?
 EXPIRE_AFTER = 90 # How many days before an IP is removed from list?
 FORMAT = 'common' # Default format is Apache common format from Apachelog
 COMMENT_LOG = 'POST /comment/reply' # Drupal comment in log uses this POST
+IPSET = 'ipset'
+IPTABLES = 'iptables'
 
 # Pull in local configuration from local_settings.py
 try:
@@ -272,24 +274,24 @@ def main(argv=None):
             # Create blacklist set, will fail gracefully if it exists already
             dprint("Create blacklist set\n")
             try:
-                subprocess.check_call(["ipset", "--create", "blacklist", "iphash", "--hashsize", "4096"])
+                subprocess.check_call([IPSET, "--create", "blacklist", "iphash", "--hashsize", "4096"])
             except:
                 pass
             
             dprint("Check blacklist set is listed in iptables\n")
-            p = subprocess.Popen(["iptables", "-L", "-n"], stdout=subprocess.PIPE).communicate()[0]
+            p = subprocess.Popen([IPTABLES, "-L", "-n"], stdout=subprocess.PIPE).communicate()[0]
             match = re.search('match-set blacklist src', p)
             if not match:
                 dprint("Adding blacklist set to top of iptables\n")
-                subprocess.check_call(["iptables", "-I", "INPUT", "1", "-m", "set", "--set", "blacklist", "src", "-j", "DROP"])
+                subprocess.check_call([IPTABLES, "-I", "INPUT", "1", "-m", "set", "--set", "blacklist", "src", "-j", "DROP"])
             
             # Flush blacklist of existing values
             dprint("Flush blacklist set before re-filling with IPs\n")
-            subprocess.check_call(["ipset", "--flush", "blacklist"])
+            subprocess.check_call([IPSET, "--flush", "blacklist"])
             
             dprint("Adding blacklist IPs to blacklist set\n")
             for ip in blacklist:
-                subprocess.check_call(["ipset", "--add", "blacklist", "%s" % ip])
+                subprocess.check_call([IPSET, "--add", "blacklist", "%s" % ip])
             
             dprint("Finishing ban-them run %s\n\n\n", time.ctime())
             

@@ -58,3 +58,12 @@ EXCLUDE_IPS = [
                '127.0.0.1', # Office IP
                '10.10.10.1' # Home IP
                ]
+
+'''
+IPSET & IPTABLES - if the executables aren't on the path or installed in a 
+non-standard place, put the full path to the executable below. Defaults are
+used.
+'''
+
+IPSET = 'ipset'
+IPTABLES = 'iptables'
