@@ -121,7 +121,7 @@ def get_sqlite_cursor():
     
     if type(con) != "sqlite3.Connection":
         try:
-            con = lite.connect('blacklist.db')  
+            con = lite.connect(os.path.dirname(os.path.realpath(__file__))+'blacklist.db')  
         except lite.Error, e:
             print "Error %s:" % e.args[0]
             sys.exit(1)
