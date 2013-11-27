@@ -139,7 +139,7 @@ def get_sqlite_cursor():
         cur.execute("CREATE TABLE blacklist (ip TEXT PRIMARY KEY, timestamp INT)")
     else:
         cur.execute("SELECT COUNT(ip) FROM blacklist;")
-        dprint("%s IPs already in database", cur.fetchone())                       
+        dprint("%s IPs already in database\n", cur.fetchone())                       
 
 '''
 Check a list of IP addresses against the local database (it's quicker). If
@@ -267,7 +267,7 @@ def main(argv=None):
         #4. Time to update the firewall, setting the rules and ipset if they
         #   don't exist already.
 
-            dprint("Updating ipset and iptables with %s new IPs\n", len(blacklist))
+            dprint("Updating ipset and iptables with %s IPs\n", len(blacklist))
             
             # Create blacklist set, will fail gracefully if it exists already
             dprint("Create blacklist set\n")
@@ -287,7 +287,7 @@ def main(argv=None):
             dprint("Flush blacklist set before re-filling with IPs\n")
             subprocess.check_call(["ipset", "--flush", "blacklist"])
             
-            dprint("Adding new IPs to blacklist set\n")
+            dprint("Adding blacklist IPs to blacklist set\n")
             for ip in blacklist:
                 subprocess.check_call(["ipset", "--add", "blacklist", "%s" % ip])
             
