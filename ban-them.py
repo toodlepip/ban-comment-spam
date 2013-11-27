@@ -264,14 +264,14 @@ def main(argv=None):
             print p
             match = re.search('match-set blacklist src', p)
             if not match:
-                subprocess.check_call(["iptables", "-I INPUT", "1", "-m set", "--set blacklist", "src", "-j DROP"])
+                subprocess.check_call(["iptables", "-I", "INPUT", "1", "-m", "set", "--set", "blacklist", "src", "-j", "DROP"])
             
             # Flush blacklist of existing values
             subprocess.check_call(["ipset", "--flush"])
             
             
             for ip in blacklist:
-                subprocess.check_call(["ipset", "-add blacklist %s" % ip])
+                subprocess.check_call(["ipset", "-add", "blacklist", "%s" % ip])
              
             sys.exit()
         
