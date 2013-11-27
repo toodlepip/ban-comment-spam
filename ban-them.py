@@ -230,6 +230,8 @@ def main(argv=None):
 
         if opts.run:
         
+            dprint("Starting ban-them run %s\n", time.ctime())
+                
         #1. Parse the apache log to see if get IPs which have posted comments
         #   and those which have looked at loads of pages
             
@@ -286,7 +288,9 @@ def main(argv=None):
             dprint("Adding new IPs to blacklist set\n")
             for ip in blacklist:
                 subprocess.check_call(["ipset", "--add", "blacklist", "%s" % ip])
-             
+            
+            dprint("Finishing ban-them run %s\n\n\n", time.ctime())
+            
             sys.exit()
             
         if opts.stats:
