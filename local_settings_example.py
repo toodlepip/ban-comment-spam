@@ -67,3 +67,9 @@ used.
 
 IPSET = 'ipset'
 IPTABLES = 'iptables'
+
+'''
+COMMENT_LOG can be used to customise the pattern that's used to search for
+comment submissions in the Apache logs.
+'''
+COMMENT_LOG = 'POST /comment/reply'

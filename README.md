@@ -13,6 +13,10 @@ In effect it's a DDoS attack through comments. The aim of this script is to
 stop or at least limit the effects of this by blocking offending IPs at the
 firewall level.
 
+This script is based on Drupal but could be tailored to other CMSes that have
+a set pattern for posting comments. Alter the COMMENT_LOG global to change
+the pattern searched.
+
 ## Installation and use
 
 Requirements:
