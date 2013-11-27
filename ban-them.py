@@ -255,7 +255,7 @@ def main(argv=None):
             # Create blacklist set, will fail gracefully if it exists already
             subprocess.check_call(["echo", "ipset --create blacklist iphash --hashsize 4096"])
             
-            p = subprocess.check_output(["iptables", "-S INPUT"])
+            p = subprocess.Popen(["iptables", "-S INPUT"], stdout=subprocess.PIPE).communicate()[0]
             match = re.search('-A INPUT -m set --match-set blacklist src -j DROP', p)
             if not match:
                 subprocess.check_call(["echo", "iptables -I INPUT 1 -m set --set blacklist src -j DROP"])
