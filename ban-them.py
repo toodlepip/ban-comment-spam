@@ -257,7 +257,7 @@ def main(argv=None):
             
             p = subprocess.Popen(["iptables", "-L", "-n"], stdout=subprocess.PIPE).communicate()[0]
             print p
-            match = re.search('-A INPUT -m set --match-set blacklist src -j DROP', p)
+            match = re.search('match-set blacklist src', p)
             if not match:
                 subprocess.check_call(["echo", "iptables -I INPUT 1 -m set --set blacklist src -j DROP"])
             
