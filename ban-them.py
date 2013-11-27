@@ -46,6 +46,8 @@ TESTRUN = 0
 PROFILE = 0
 HIT_THRESHOLD = 100 # How many hits before we check an IP?
 EXPIRE_AFTER = 90 # How many days before an IP is removed from list?
+FORMAT = 'common' # Default format is Apache common format from Apachelog
+COMMENT_LOG = 'POST /comment/reply' # Drupal comment in log uses this POST
 
 # Pull in local configuration from local_settings.py
 try:
@@ -53,22 +55,140 @@ try:
 except:
     pass
 
-# Copied from
-# http://stackoverflow.com/questions/7806563/how-to-unzip-a-file-with-python-2-4
-def unzip(path):
-    zfile = zipfile.ZipFile(path)
-    for name in zfile.namelist():
-        (dirname, filename) = os.path.split(name)
-        if filename == '':
-            # directory
-            if not os.path.exists(dirname):
-                os.mkdir(dirname)
+# Global variables
+con = None # Sqlite connection
+cur = None # Sqlite cursor
+
+'''
+Check the format of the Apache logfile is defined grab the format from the
+Apachelog module or use the custom format supplied.
+'''
+def check_apache_format(format='common'):
+    if not format: return apachelog.formats['common']
+    if format in apachelog.formats: return apachelog.formats[format]
+    return format
+
+def parse_apache_log(file=LOGFILE, threshold=HIT_THRESHOLD, \
+                         exclude=''):
+    dprint("\n\nProcessing apache file\n\n")
+    ips = defaultdict(int) # Use defaultdict to do a simple count
+    comments = defaultdict(int)
+    format = check_apache_format(FORMAT)
+    p = apachelog.parser(format)
+        
+    try:
+        filehandle = open(file)
+        dprint("Parsing apache log file: %s\n", file)
+    except: 
+        sys.stderr.write("Couldn't open log file %s\n" % file)
+        sys.exit(-1)
+    
+    count = 0
+    for line in filehandle:
+        try:
+            data = p.parse(line)
+            ips[data['%h']] += 1
+            if (re.search(COMMENT_LOG, data['%r'])):
+                comments[data['%h']] += 1
+            count += 1
+        except:
+            sys.stderr.write("Unable to parse %s\n" % line)
+    dprint("Parsed %s lines from %s\n", (count, file))
+    dprint("%s IP addresses posted %s comments\n", (len(comments), sum(comments.values())))
+                    
+    visitor_ips_to_check = []
+    for ip in sorted(ips, key=ips.get, reverse=True):
+        if ips[ip] < threshold:
+            break
+        if ip in exclude:
+            continue
+        visitor_ips_to_check.append(ip)
+    dprint("%s IP addresses visited over %s times\n", \
+                     (len(visitor_ips_to_check), threshold))
+            
+    # Merge list so there's no duplication in checking IP addresses
+    ips_to_check = list(set(visitor_ips_to_check + comments.keys()))
+    dprint("%s IP addresses to check (de-duped)\n", len(ips_to_check))
+    return ips_to_check
+
+'''
+Get sqlite connection to use, creating the database and blacklist table if
+they don't exist already.
+'''
+def get_sqlite_cursor():
+    global con
+    global cur
+    
+    if type(con) != "sqlite3.Connection":
+        try:
+            con = lite.connect('blacklist.db')  
+        except lite.Error, e:
+            print "Error %s:" % e.args[0]
+            sys.exit(1)
+            
+    if type(cur) != "sqlite3.Cursor":
+        cur = con.cursor()    
+        cur.execute('SELECT SQLITE_VERSION()')
+        data = cur.fetchone()
+        dprint("Using SQLite version: %s\n", data)
+        
+    # Check blacklist table exists, if not, create it
+    cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='blacklist';")
+    if not cur.fetchone():
+        dprint("Blacklist table not in local DB, need to create it\n")
+        cur.execute("CREATE TABLE blacklist (ip TEXT PRIMARY KEY, timestamp INT)")
+                        
+
+'''
+Check a list of IP addresses against the local database (it's quicker). If
+listed, update the timestamp in the DB
+'''
+def check_local(ips):
+    global con
+    global cur
+    
+    ips_to_check = []
+    for ip in ips:
+        cur.execute("SELECT ip FROM blacklist WHERE ip = '%s'" % ip)
+        if cur.fetchone():
+            dprint("%s already stored locally, updating timestamp\n", ip)
+            cur.execute("REPLACE INTO blacklist (ip, timestamp) VALUES (?, ?)", \
+                        (ip, int(time.time())))
+            con.commit()
         else:
-            # file
-            fd = open(name, 'w')
-            fd.write(zfile.read(name))
-            fd.close()
-    zfile.close()
+            ips_to_check.append(ip)
+    dprint("%s IPs already in local DB\n", len(ips)-len(ips_to_check))
+    
+    return ips_to_check
+
+def update_local(ips):
+    global con
+    global cur
+    
+    for ip in ips:
+        cur.execute("REPLACE INTO blacklist (ip, timestamp) VALUES (?, ?)", \
+            (ip, int(time.time())))
+        con.commit()
+        
+def expire_local():
+    global con
+    global cur
+    
+    cur.execute("DELETE FROM blacklist WHERE timestamp <= %s" % int(time.time()-EXPIRE_AFTER*24*60*60))
+    con.commit()
+    dprint("%s IPs expired from local DB\n", cur.rowcount)
+    
+def get_local_ips():
+    global con
+    global cur
+    
+    cur.execute("SELECT ip FROM blacklist")
+    ips = cur.fetchall()
+    if ips:
+        return ips
+    else:
+        return False
+        
 
 def main(argv=None):
     '''Command line options.'''
@@ -80,8 +200,7 @@ def main(argv=None):
     program_version_string = '%%prog %s (%s)' % (program_version, program_build_date)
     #program_usage = '''usage: spam two eggs''' # optional - will be autogenerated by optparse
     program_longdesc = '''''' # optional - give further explanation about what the program does
-    program_license = "Copyright 2013 user_name (organization_name)                                            \
-                Licensed under the Apache License 2.0\nhttp://www.apache.org/licenses/LICENSE-2.0"
+    program_license = ""
  
     if argv is None:
         argv = sys.argv[1:]
@@ -107,57 +226,48 @@ def main(argv=None):
             #print("outfile = %s" % opts.outfile)
             
         # MAIN BODY #
+
+        if opts.run:
         
         #1. Parse the apache log to see if get IPs which have posted comments
         #   and those which have looked at loads of pages
-        
-        if opts.run:
-            
-#             # Check latest file from SFS to see if its out of date. If so,
-#             # set download flag so we go and grab it
-#             download = False
-#             try:
-#                 (mode, ino, dev, nlink, uid, gid, size, atime, mtime, ctime) = \
-#                     os.stat(SFS_FILE+".txt")
-#                 dprint("%s last modified: %s\n", (SFS_FILE, time.ctime(mtime)))
-#                 if time.time() > mtime+REFRESH_FILE:
-#                     download = True
-#             except:
-#                 download = True
-#                 pass
-#             
-#             # Download the latest version of file from SFS
-#             # http://www.stopforumspam.com/downloads/listed_ip_90.zip
-#             if download:
-#                 dprint("Time to refresh file: %s", SFS_FILE)
-#                 try:
-#                     urllib.urlretrieve(SFS_LOG_URL, SFS_FILE+".zip")
-#                     unzip(SFS_FILE+".zip")
-#                 except Exception, e:
-#                     print e
-#                     sys.exit(-1)
-#             else:
-#                 dprint("%s still current", SFS_FILE)
-# 
-#             # Run through downloaded file and add to ipset blacklist
-#             with open(SFS_FILE+".txt") as f:
-#                 for i, l in enumerate(f):
-#                     print "%s: %s" % (i, l)
-#             
-#             sys.exit()
-            
-            
             
             ips_to_check = parse_apache_log(file=LOGFILE, \
-                threshold=HIT_THRESHOLD, exclude=EXCLUDE_IPS)
-            
+                threshold=HIT_THRESHOLD, \
+                exclude=EXCLUDE_IPS if 'EXCLUDE_IPS' in globals() else '')
+        
+        #2. Check the IPs against the local database to see if they're already
+        #   listed as baddies. If they're in there update timestamp
+        
+            get_sqlite_cursor() # Setup local DB, creating if necessary
+            ips_to_check = check_local(ips_to_check)
+      
         #2. Run those bad IPs past http://stopforumspam.com who maintain a 
         #   good list of Forum spammers. No API key is required, but there is
         #   a cap on how many calls can be made. Suggest running this script
         #   once/day. More info: http://www.stopforumspam.com/usage
 
-            blacklist = []
-            blacklist = check_sfs(ips_to_check)
+#             ips_to_check = check_sfs(ips_to_check)
+#             update_local(ips_to_check)
+#             expire_local()
+#             blacklist = get_local_ips()
+            
+            # Create blacklist set, will fail gracefully if it exists already
+            subprocess.check_call(["echo", "ipset --create blacklist iphash --hashsize 4096"])
+            
+            p = subprocess.check_output(["iptables", "-S INPUT"])
+            match = re.search('-A INPUT -m set --match-set blacklist src -j DROP', p)
+            if not match:
+                subprocess.check_call(["echo", "iptables -I INPUT 1 -m set --set blacklist src -j DROP"])
+            
+            # Flush blacklist of existing values
+            subprocess.check_call(["echo", "ipset --flush"])
+            
+            
+            for ip in blacklist:
+                subprocess.check_call(["echo", "ipset -add blacklist %s" % ip])
+             
+            sys.exit()
         
         #3. Generate a list of IP addresses that need to be blocked from the
         #   server and add them to the ipset blacklist.
@@ -172,12 +282,6 @@ def main(argv=None):
         # ipset --flush blacklist
             #subprocess.check_call(["ipset", "--flush blacklist"])
         
-        # Add IPs to new blacklist set
-        # ipset --add blacklist IP
-            for ip in blacklist:
-                print "Block: %s" % ip
-                #subprocess.check_call(["ipset", "--add blacklist", ip])
-        
         
     except Exception, e:
         indent = len(program_name) * " "
@@ -189,43 +293,6 @@ def dprint(text="", data=[]):
     if DEBUG:
         sys.stdout.write(text % data)
     
-def  parse_apache_log(file=LOGFILE, threshold=HIT_THRESHOLD, \
-                         exclude=EXCLUDE_IPS):
-    ips = defaultdict(int)
-    comments = defaultdict(int)
-        
-    dprint("\n\nProcessing apache file\n\n")
-    format = r'%h %v %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" \"%{Cookie}i\"'
-    p = apachelog.parser(format)
-    dprint("Parsing apache log file: %s\n",LOGFILE)
-    count = 0
-    for line in open(LOGFILE):
-        try:
-            data = p.parse(line)
-            ips[data['%h']] += 1
-            if (re.search('POST /comment/reply', data['%r'])):
-                comments[data['%h']] += 1
-            count += 1
-        except:
-            sys.stderr.write("Unable to parse %s\n" % line)
-    dprint("Parsed %s lines from %s\n", (count, LOGFILE))
-    dprint("%s IP addresses posted %s comments\n", (len(comments), sum(comments.values())))
-                    
-    visitor_ips_to_check = []
-    for ip in sorted(ips, key=ips.get, reverse=True):
-        if ips[ip] < HIT_THRESHOLD:
-            break
-        if ip in EXCLUDE_IPS:
-            continue
-        visitor_ips_to_check.append(ip)
-    dprint("%s IP addresses visited over %s times\n", \
-                     (len(visitor_ips_to_check), HIT_THRESHOLD))
-            
-    # Merge list so there's no duplication in checking IP addresses
-    ips_to_check = list(set(visitor_ips_to_check + comments.keys()))
-    dprint("%s IP addresses to check (de-duped)\n", len(ips_to_check))
-    return ips_to_check
-
 def check_sfs(ips):
     _to_blacklist = []
     for i in xrange(0, len(ips), 15):
@@ -233,17 +300,15 @@ def check_sfs(ips):
         q = "ip[]=" + "&ip[]=".join(ip_to_check) + "&f=json"
         #req = urllib2.Request('http://www.stopforumspam.com/api', data)
         req = urllib2.Request('http://www.stopforumspam.com/api?%s' % q)
-        print req.get_full_url()
-        print req.get_data()
         try:
             response = urllib2.urlopen(req)
             data = json.loads(response.read())
             for rec in data['ip']:
                 if rec['appears'] == 1:
                     _to_blacklist.append(rec['value'])
-                    dprint("%s is *blacklisted*", rec['value'])
+                    dprint("%s is *blacklisted*\n", rec['value'])
                 else:
-                   dprint("%s is NOT blacklisted", rec['value'])
+                   dprint("%s is NOT blacklisted\n", rec['value'])
         except urllib2.URLError, e:
             print e
             sys.exit()
