@@ -175,7 +175,7 @@ def update_local(ips):
             (ip, int(time.time())))
         con.commit()
         count += cur.rowcount
-    dprint("Updated %d rows in the local DB", count)
+    dprint("Updated %d rows in the local DB\n", count)
         
 def expire_local():
     global con
@@ -309,7 +309,7 @@ def main(argv=None):
     except Exception, e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         indent = len(program_name) * " "
-        sys.stderr.write(program_name + ": " + repr(e) + " line: " + exc_traceback.tb_lineno + "\n")
+        sys.stderr.write(program_name + ": " + repr(e) + " line: %d" % exc_traceback.tb_lineno + "\n")
         sys.stderr.write(indent + "  for help use --help\n")
         return 2
     
