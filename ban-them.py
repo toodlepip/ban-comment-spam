@@ -278,7 +278,7 @@ def main(argv=None):
             
             dprint("Adding new IPs to blacklist set\n")
             for ip in blacklist:
-                subprocess.check_call(["ipset", "-add", "blacklist", "%s" % ip])
+                subprocess.check_call(["ipset", "--add", "blacklist", "%s" % ip])
              
             sys.exit()
         
