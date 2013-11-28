@@ -79,4 +79,7 @@ N.B. Must be installed and run as root.
 + [Drop IP addresses using iptables](http://www.cyberciti.biz/faq/linux-iptables-drop/)
 + [Using iptables & ipset](http://raid6.com.au/~onlyjob/posts/iptables-ipset/)
 
- 
+## Thanks
+
+Thanks to all the reference info listed above and to
+[Chinwag](http://chinwag.com) for giving me the time to develop this. 
