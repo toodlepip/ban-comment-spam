@@ -3,6 +3,9 @@
 Script for testing IPs in Apache Logs against StopForumSpam.com and banning
 them, if they're evil.
 
+* USE THIS SCRIPT AT YOUR OWN RISK - IF USED IN FULL IT'LL CHANGE THE FIREWALL
+ON YOUR SERVER. BACKUPS AND TESTING ARE YOUR FRIENDS *
+
 ## Introduction
 
 One of our sites suffers from huge amounts of comment spam. Virtually all of it
