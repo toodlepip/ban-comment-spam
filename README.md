@@ -6,6 +6,9 @@ them, if they're evil.
 **USE THIS SCRIPT AT YOUR OWN RISK - IF USED IN FULL IT'LL CHANGE THE FIREWALL
 ON YOUR SERVER. BACKUPS AND TESTING ARE YOUR FRIENDS**
 
+For more background, see:
+[The Phantom Menace: Is Comment Spam Killing Your Site?](http://toodlepip.co.uk/2013/phantom-menace-comment-spam-killing-site/)
+
 ## Introduction
 
 One of our sites suffers from huge amounts of comment spam. Virtually all of it
